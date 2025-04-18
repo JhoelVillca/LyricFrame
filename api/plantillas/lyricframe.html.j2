@@ -1,0 +1,112 @@
+{# api/plantillas/lyricframe.html.j2 #}
+<svg width="350" height="140" viewBox="0 0 350 140" fill="none" xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    {# Definiciones de Gradientes y Patrones si los necesitamos #}
+    <defs>
+        {# Ejemplo: Podríamos usar la paleta para un gradiente #}
+        <linearGradient id="fondoGradiente" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="{{ paleta_colores[0] | default('#333') }}" />
+            <stop offset="100%" stop-color="{{ paleta_colores[1] | default('#111') }}" />
+        </linearGradient>
+    </defs>
+
+    {# Estilos CSS #}
+    <style>
+        .contenedor {
+            font-family: system-ui, sans-serif;
+            border-radius: 8px;
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+        }
+        .texto-principal { font-size: 16px; font-weight: 600; fill: {{ color_texto_contraste | default('#FAFAFA') }}; }
+        .texto-secundario { font-size: 13px; font-weight: 400; fill: {{ color_texto_contraste | default('#FAFAFA') }}; }
+        .texto-estado { font-size: 11px; font-weight: 500; fill: {{ color_texto_contraste | default('#A8A8A8') }}; opacity: 0.8; } /* Ejemplo con estado dinámico y opacidad */
+
+
+        a:hover .texto-principal, a:hover .texto-secundario {
+            text-decoration: underline;
+        }
+
+        @keyframes level {
+            0% { height: 2px; }
+            50% { height: 15px; }
+            100% { height: 2px; }
+        }
+
+        .contenedor-barras {
+            position: relative;
+            width: 100%;
+            height: 20px;
+            overflow: hidden;
+        }
+        .barra {
+            width: 3px;
+            height: 2px;
+            background-color: {{ paleta_colores[2] | default('#5be387') }};
+            position: absolute;
+            bottom: 0;
+            border-radius: 1px;
+            animation-name: level;
+            animation-iteration-count: infinite;
+            animation-direction: alternate;
+        }
+
+        {{ css_barras_eq | safe }}
+
+        .album-art {
+            border-radius: 4px;
+        }
+    </style>
+
+    {# Fondo del SVG #}
+    <rect
+        width="100%" height="100%"
+        rx="8" ry="8"
+        fill="{{ color_fondo_final | default('#181414') }}" {# <--- Modificación aquí #}
+        stroke="{{ color_borde | default('#181414') }}"
+        stroke-width="1"
+        class="contenedor"
+    />
+
+    {# Contenido Principal #}
+    <foreignObject x="15" y="15" width="320" height="110">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: center; height: 100%; gap: 15px;">
+
+            {# Imagen del Álbum #}
+            <a xlink:href="{{ url_cancion | default('#') }}" target="_blank">
+                <img src="{{ imagen_b64 }}" width="112" height="112" class="album-art" alt="Album Art"/>
+            </a>
+
+            {# Bloque de Texto y Barras #}
+            <div style="display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex-grow: 1; height: 100%;">
+
+                {# Texto Estado #}
+                <div class="texto-estado" style="margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ estado }}
+                </div>
+
+                {# Nombre Canción (Clicable) #}
+                <a xlink:href="{{ url_cancion | default('#') }}" target="_blank" style="text-decoration: none;">
+                    <div class="texto-principal" style="margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ cancion | e }}">
+                        {{ cancion }}
+                    </div>
+                </a>
+
+                {# Nombre Artista (Clicable) #}
+                <a xlink:href="{{ url_artista | default('#') }}" target="_blank" style="text-decoration: none;">
+                     <div class="texto-secundario" style="margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ artista | e }}">
+                        por {{ artista }}
+                    </div>
+                </a>
+
+                {# Contenedor de Barras EQ #}
+                <div class="contenedor-barras">
+                    {% for i in range(num_barras) %}
+                        <div class="barra"></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </foreignObject>
+
+</svg>

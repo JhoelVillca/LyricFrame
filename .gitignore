@@ -1,0 +1,19 @@
+echo # Entorno Virtual > .gitignore
+echo venv/ >> .gitignore
+echo __pycache__/ >> .gitignore
+echo *.pyc >> .gitignore
+echo *.pyo >> .gitignore
+echo. >> .gitignore
+echo # Archivo de variables de entorno locales >> .gitignore
+echo .env >> .gitignore
+echo. >> .gitignore
+echo # Archivo de notificador privado >> .gitignore
+echo _notificador_privado.py >> .gitignore
+echo. >> .gitignore
+echo # Archivos del sistema operativo >> .gitignore
+echo .DS_Store >> .gitignore
+echo Thumbs.db >> .gitignore
+echo. >> .gitignore
+echo # Otros específicos (si usas IDEs) >> .gitignore
+echo .idea/ >> .gitignore
+echo .vscode/ >> .gitignore
