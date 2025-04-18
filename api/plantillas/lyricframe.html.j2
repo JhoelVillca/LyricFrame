@@ -1,112 +1,103 @@
-{# api/plantillas/lyricframe.html.j2 #}
-<svg width="350" height="140" viewBox="0 0 350 140" fill="none" xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink">
+{% autoescape true %}
+<svg width="350" height="140" viewBox="0 0 350 140" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
 
-    {# Definiciones de Gradientes y Patrones si los necesitamos #}
-    <defs>
-        {# Ejemplo: Podríamos usar la paleta para un gradiente #}
-        <linearGradient id="fondoGradiente" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="{{ paleta_colores[0] | default('#333') }}" />
-            <stop offset="100%" stop-color="{{ paleta_colores[1] | default('#111') }}" />
-        </linearGradient>
-    </defs>
+    @keyframes barMove {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
 
-    {# Estilos CSS #}
-    <style>
-        .contenedor {
-            font-family: system-ui, sans-serif;
-            border-radius: 8px;
-            transition: background-color 0.5s ease, border-color 0.5s ease;
-        }
-        .texto-principal { font-size: 16px; font-weight: 600; fill: {{ color_texto_contraste | default('#FAFAFA') }}; }
-        .texto-secundario { font-size: 13px; font-weight: 400; fill: {{ color_texto_contraste | default('#FAFAFA') }}; }
-        .texto-estado { font-size: 11px; font-weight: 500; fill: {{ color_texto_contraste | default('#A8A8A8') }}; opacity: 0.8; } /* Ejemplo con estado dinámico y opacidad */
+    .widget-container {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
+    .status-dot {
+      animation: pulse 2s infinite ease-in-out;
+    }
 
-        a:hover .texto-principal, a:hover .texto-secundario {
-            text-decoration: underline;
-        }
+    .barra {
+      transform-origin: bottom;
+      animation: barMove 1.2s infinite ease-in-out;
+    }
 
-        @keyframes level {
-            0% { height: 2px; }
-            50% { height: 15px; }
-            100% { height: 2px; }
-        }
+    {{ css_barras_eq | safe }}
+  </style>
 
-        .contenedor-barras {
-            position: relative;
-            width: 100%;
-            height: 20px;
-            overflow: hidden;
-        }
-        .barra {
-            width: 3px;
-            height: 2px;
-            background-color: {{ paleta_colores[2] | default('#5be387') }};
-            position: absolute;
-            bottom: 0;
-            border-radius: 1px;
-            animation-name: level;
-            animation-iteration-count: infinite;
-            animation-direction: alternate;
-        }
+  <!-- Background with dynamic color -->
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:{{ color_fondo_final }};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:{{ paleta_colores[0] }};stop-opacity:0.8" />
+    </linearGradient>
+    
+  </defs>
 
-        {{ css_barras_eq | safe }}
+  <!-- Main background -->
+  <rect width="100%" height="100%" rx="10" fill="url(#backgroundGradient)" />
+  
+  <!-- Border -->
+  <rect width="100%" height="100%" rx="10" fill="none" stroke="{{ color_borde }}" stroke-width="1" />
 
-        .album-art {
-            border-radius: 4px;
-        }
-    </style>
+  <foreignObject width="350" height="140">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="widget-container" style="padding: 12px; box-sizing: border-box; display: flex; height: 100%; color: {{ color_texto_contraste }}">
+      <!-- Album Cover -->
+      <div style="position: relative; margin-right: 16px;">
+        <a href="{{ url_cancion }}" target="_blank" style="display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+          <img src="{{ imagen_b64 }}" width="108" height="108" style="display: block; border-radius: 6px;" alt="{{ album | e }}" />
+        </a>
+      </div>
 
-    {# Fondo del SVG #}
-    <rect
-        width="100%" height="100%"
-        rx="8" ry="8"
-        fill="{{ color_fondo_final | default('#181414') }}" {# <--- Modificación aquí #}
-        stroke="{{ color_borde | default('#181414') }}"
-        stroke-width="1"
-        class="contenedor"
-    />
-
-    {# Contenido Principal #}
-    <foreignObject x="15" y="15" width="320" height="110">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: center; height: 100%; gap: 15px;">
-
-            {# Imagen del Álbum #}
-            <a xlink:href="{{ url_cancion | default('#') }}" target="_blank">
-                <img src="{{ imagen_b64 }}" width="112" height="112" class="album-art" alt="Album Art"/>
-            </a>
-
-            {# Bloque de Texto y Barras #}
-            <div style="display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex-grow: 1; height: 100%;">
-
-                {# Texto Estado #}
-                <div class="texto-estado" style="margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    {{ estado }}
-                </div>
-
-                {# Nombre Canción (Clicable) #}
-                <a xlink:href="{{ url_cancion | default('#') }}" target="_blank" style="text-decoration: none;">
-                    <div class="texto-principal" style="margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ cancion | e }}">
-                        {{ cancion }}
-                    </div>
-                </a>
-
-                {# Nombre Artista (Clicable) #}
-                <a xlink:href="{{ url_artista | default('#') }}" target="_blank" style="text-decoration: none;">
-                     <div class="texto-secundario" style="margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ artista | e }}">
-                        por {{ artista }}
-                    </div>
-                </a>
-
-                {# Contenedor de Barras EQ #}
-                <div class="contenedor-barras">
-                    {% for i in range(num_barras) %}
-                        <div class="barra"></div>
-                    {% endfor %}
-                </div>
-            </div>
+      <!-- Content -->
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+        <!-- Status -->
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; opacity: 0.9;">
+          {% if estado == 'Escuchando ahora:' %}
+            <div class="status-dot" style="width: 6px; height: 6px; border-radius: 50%; background: {{ paleta_colores[1] }}; margin-right: 6px;"></div>
+          {% endif %}
+          <span>{{ estado }}</span>
         </div>
-    </foreignObject>
 
+        <!-- Song Title -->
+        <a href="{{ url_cancion }}" target="_blank" style="text-decoration: none; color: inherit; margin-bottom: 2px;">
+          <div style="font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ cancion | e }}">
+            {{ cancion }}
+          </div>
+        </a>
+
+        <!-- Artist -->
+        <a href="{{ url_artista }}" target="_blank" style="text-decoration: none; color: inherit; margin-bottom: 2px;">
+          <div style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ artista | e }}">
+            {{ artista }}
+          </div>
+        </a>
+
+        <!-- Album -->
+        <div style="font-size: 12px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ album | e }}">
+          {{ album }}
+        </div>
+
+        <!-- Equalizer -->
+        {% if estado == 'Escuchando ahora:' %}
+        <div style="margin-top: 8px; height: 20px; display: flex; align-items: flex-end; gap: 2px;">
+          {% for i in range(num_barras) %}
+            <div class="barra" style="width: 2px; height: {{ [40, 60, 80, 100, 80, 60, 40][i % 7] }}%; background-color: {{ paleta_colores[2] }}; animation-delay: {{ (i * 0.1) }}s;"></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Spotify Logo -->
+        <div style="margin-top: auto; display: flex; align-items: center; font-size: 11px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 4px; fill: {{ color_texto_contraste }}">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.371-.721.49-1.101.371-3.011-1.859-6.775-2.28-11.222-1.24-.451.12-.902-.181-1.002-.63-.101-.45.18-.9.63-1.021 4.867-1.11 9.011-.6 12.452 1.42.431.27.541.81.241 1.21zm1.472-3.269c-.301.451-.902.6-1.352.3-3.442-2.1-8.686-2.721-12.755-1.49-.492.15-1.02-.12-1.171-.63-.15-.51.12-1.021.63-1.171 4.648-1.41 10.436-.72 14.398 1.68.45.301.6.902.301 1.352zm.15-3.39C15.361 8.23 8.906 8.01 5.195 9.09c-.6.181-1.23-.181-1.411-.78-.181-.601.18-1.23.78-1.411 4.287-1.29 11.392-1.04 15.863 1.591.53.33.721 1.041.391 1.572-.33.529-1.042.71-1.572.39z"/>
+          </svg>
+          <span style="opacity: 0.9;">Spotify</span>
+        </div>
+      </div>
+    </div>
+  </foreignObject>
 </svg>
+{% endautoescape %}

@@ -72,40 +72,7 @@ def _extraer_paleta_colores(contenido_imagen_bytes, num_colores=4):
         # ColorThief puede fallar con imágenes corruptas o formatos raros
         logging.error(f"Error al extraer paleta de colores con ColorThief: {e}")
         return paleta_defecto
-
-
-def _generar_css_barras_eq(num_barras=NUM_BARRAS_EQ):
-    """
-    Genera el código CSS para las barras animadas del ecualizador.
-    """
-    css_final = ""
-    separacion = 1 # Espacio a la izquierda de la primera barra
-    ancho_barra_mas_espacio = 4 # Ancho de barra (3px) + espacio (1px)
-
-    for i in range(1, num_barras + 1):
-        duracion_animacion = random.randint(475, 900)  # ms
-        # Genera valores aleatorios para cubic-bezier (dentro de rangos razonables)
-        x1 = round(random.uniform(0, 1), 2)
-        y1 = round(random.uniform(0, 1.5), 2) # Puede exceder 1 para efectos de rebote
-        x2 = round(random.uniform(0, 1), 2)
-        y2 = round(random.uniform(0, 1.5), 2)
-
-        css_regla = (
-            ".barra:nth-child({}) {{ "
-            "left: {}px; "
-            "animation-duration: {}ms; "
-            "animation-timing-function: cubic-bezier({}, {}, {}, {}); "
-            "}}".format(i, separacion, duracion_animacion, x1, y1, x2, y2)
-        )
-        css_final += css_regla + "\n"
-        separacion += ancho_barra_mas_espacio # Mover a la posición de la siguiente barra
-
-    logging.debug("CSS para barras EQ generado.")
-    # print(css_final) # Descomentar para depurar el CSS generado
-    return css_final
-
-# Dentro de api/generador_svg.py
-
+    
 def _mezclar_con_blanco(rgb_color, factor_blanco=0.15):
     """
     Mezcla un color RGB con blanco.
@@ -229,11 +196,8 @@ def crear_svg(info_cancion, color_fondo_param="181414", color_borde_param="18141
     # 5. Convertir paleta a formato CSS hex para otros usos (ej. barras)
     paleta_colores_hex = [f"#{r:02x}{g:02x}{b:02x}" for r, g, b in paleta_colores_rgb]
 
-    # 6. Generar CSS para las barras EQ
-    css_barras = _generar_css_barras_eq()
-
     # 7. Determinar el texto de estado
-    estado_actual = "Escuchando ahora:" if info_cancion.get('esta_reproduciendo') else "Última escuchada:"
+    estado_actual = "Escuchando ahora:" 
 
     # 8. Preparar contexto para la plantilla Jinja2
     contexto = {
@@ -247,9 +211,9 @@ def crear_svg(info_cancion, color_fondo_param="181414", color_borde_param="18141
         "color_fondo_final": color_fondo_final,      # Color de fondo final (hex)
         "color_borde": f"#{color_borde_param}",      # Color de borde (hex)
         "color_texto_contraste": color_texto_contraste, # Color de texto calculado (hex)
-        "css_barras_eq": css_barras,                 # CSS para barras
         "paleta_colores": paleta_colores_hex,        # Paleta para barras u otros usos
         "num_barras": NUM_BARRAS_EQ                  # Número de barras
+    
     }
 
     # 9. Renderizar la plantilla SVG

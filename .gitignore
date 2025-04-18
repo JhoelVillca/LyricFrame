@@ -8,7 +8,6 @@ echo # Archivo de variables de entorno locales >> .gitignore
 echo .env >> .gitignore
 echo. >> .gitignore
 echo # Archivo de notificador privado >> .gitignore
-echo _notificador_privado.py >> .gitignore
 echo. >> .gitignore
 echo # Archivos del sistema operativo >> .gitignore
 echo .DS_Store >> .gitignore

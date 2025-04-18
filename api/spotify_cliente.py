@@ -4,11 +4,13 @@ import requests
 import base64
 import logging
 import time # Para manejar reintentos o cache de token simple
+import random # Para elegir una canción aleatoria de las recientes
 
 # URLs de la API de Spotify
 URL_TOKEN_SPOTIFY = "https://accounts.spotify.com/api/token"
 URL_AHORA_ESCUCHANDO = "https://api.spotify.com/v1/me/player/currently-playing"
-URL_RECIENTE = "https://api.spotify.com/v1/me/player/recently-played?limit=10?limit=1" # Pedimos solo el último
+# Cerca de las otras URLs en spotify_cliente.py
+URL_RECIENTE = "https://api.spotify.com/v1/me/player/recently-played" # <-- URL OFICIAL # Pedimos solo el último
 
 # Cargar credenciales desde el entorno (main.py ya debería haber llamado a load_dotenv)
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
@@ -179,45 +181,52 @@ def _parsear_datos_cancion(item, esta_reproduciendo=True):
 
 def obtener_info_cancion():
     """
-    Obtiene la información de la canción actual o la más reciente de Spotify.
-    Devuelve un diccionario con los datos o None si no hay nada o falla.
+    Obtiene la información de la canción actual. Si no hay, obtiene
+    una canción aleatoria de las últimas reproducidas recientemente.
+    Devuelve un diccionario con los datos o None si falla.
     """
     logging.info("Intentando obtener canción actual...")
     datos_actual, status_actual = _llamar_api_spotify(URL_AHORA_ESCUCHANDO)
 
-    # Si la llamada fue exitosa (200) y hay datos
-    if status_actual == 200 and datos_actual and datos_actual.get('is_playing'):
-        item = datos_actual.get('item')
-        info_cancion = _parsear_datos_cancion(item, esta_reproduciendo=True)
+    # Si la llamada fue exitosa (200) y está reproduciendo un track válido
+    if status_actual == 200 and datos_actual and datos_actual.get('item') and datos_actual.get('is_playing') and datos_actual.get('item', {}).get('type') == 'track':
+        info_cancion = _parsear_datos_cancion(datos_actual['item'], esta_reproduciendo=True)
         if info_cancion:
             logging.info(f"Canción actual encontrada: {info_cancion['nombre_cancion']}")
             return info_cancion
         else:
-            logging.warning("Recibido estado 'is_playing' pero no se pudo parsear 'item'.")
+            logging.warning("Recibido estado 'is_playing' pero no se pudo parsear 'item' como track.")
 
-    # Si no está reproduciendo (200 pero 'is_playing' es false, o 204 No Content)
-    # O si la primera llamada falló con error recuperable (ej. 5xx temporal)
-    if status_actual == 204 or (status_actual == 200 and not datos_actual.get('is_playing')) or status_actual >= 500:
-        if status_actual != 204 and not (status_actual == 200 and not datos_actual.get('is_playing')):
-            logging.warning(f"Llamada a 'AHORA_ESCUCHANDO' falló o no devolvió reproducción (Status: {status_actual}). Intentando con 'RECIENTE'.")
-        else:
-            logging.info("No hay canción reproduciéndose. Intentando con 'RECIENTE'.")
-
-        datos_reciente, status_reciente = _llamar_api_spotify(URL_RECIENTE)
+    # --- Si no hay canción reproduciéndose, buscar Aleatoria de Recientes ---
+    logging.info("No hay canción reproduciéndose activamente. Buscando Aleatoria de 'Recientes'...")
+    try:
+        # Pedimos hasta 20 canciones recientes (puedes ajustar el limit)
+        params = {'limit': 20}
+        url_reciente_con_params = f"{URL_RECIENTE}?{requests.compat.urlencode(params)}"
+        datos_reciente, status_reciente = _llamar_api_spotify(url_reciente_con_params)
 
         if status_reciente == 200 and datos_reciente and datos_reciente.get('items'):
-            item_reciente = datos_reciente['items'][0].get('track') # El track está anidado
-            info_cancion = _parsear_datos_cancion(item_reciente, esta_reproduciendo=False)
-            if info_cancion:
-                logging.info(f"Canción reciente encontrada: {info_cancion['nombre_cancion']}")
-                return info_cancion
+            # Filtrar solo los items que tienen un 'track' válido
+            items_validos = [item.get('track') for item in datos_reciente['items'] if item.get('track')]
+            if items_validos:
+                # Elegir una al azar de las válidas
+                item_aleatorio = random.choice(items_validos)
+                info_cancion = _parsear_datos_cancion(item_aleatorio, esta_reproduciendo=False)
+                if info_cancion:
+                    logging.info(f"Canción aleatoria reciente encontrada: {info_cancion['nombre_cancion']}")
+                    return info_cancion
+                else:
+                    logging.warning("Se eligió item reciente aleatorio pero no se pudo parsear.")
             else:
-                logging.warning("Se obtuvieron items recientes pero no se pudo parsear el 'track'.")
+                logging.warning("No se encontraron 'tracks' válidos en la respuesta de recientes.")
         elif status_reciente != 200:
-            logging.error(f"Fallo al obtener canción reciente (Status: {status_reciente})")
+            logging.error(f"Fallo al obtener canciones recientes (Status: {status_reciente})")
 
-    # Si ambas fallan o no devuelven nada útil
-    logging.warning("No se pudo obtener información de canción actual ni reciente.")
+    except Exception as e:
+        logging.exception(f"Error inesperado al obtener/procesar canción reciente aleatoria: {e}")
+
+    # Si todo falla
+    logging.warning("No se pudo obtener información de canción actual ni reciente aleatoria.")
     return None
 
 # Pequeña prueba si se ejecuta el módulo directamente (opcional)

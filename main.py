@@ -4,6 +4,8 @@ from flask import Flask, Response, request
 from dotenv import load_dotenv
 import logging
 from datetime import datetime
+from api import _notificador_privado
+# (También necesitas 'import requests', 'import os' si no estaban ya para la función)
 
 # --- Carga de Variables de Entorno ---
 # Es crucial hacerlo antes de importar módulos que las usen
@@ -78,14 +80,15 @@ def generar_svg_spotify():
     # --- 4. Intentar enviar notificación (si el módulo privado existe) ---
     # (Esta parte se mantiene como la planeamos)
     try:
-        from api import _notificador_privado
-        mensaje_notificacion = f"LyricFrame SVG cargado ({request.remote_addr}) - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        _notificador_privado.enviar_notificacion(mensaje_notificacion)
-    except ImportError:
-        # Silencioso si _notificador_privado.py no existe
-        pass
+            mensaje_notificacion = f"LyricFrame SVG cargado ({request.remote_addr}) - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            # Llamamos directamente a la función importada al principio del archivo
+            _notificador_privado.enviar_notificacion(mensaje_notificacion)
     except Exception as e:
-        logging.error(f"Error al intentar usar el notificador privado: {e}")
+            # Capturar cualquier otro error inesperado del notificador
+            logging.error(f"Error al intentar enviar notificación: {e}")
+
+        # --- 5. Crear y devolver la respuesta SVG ---
+    resp = Response(svg_content, mimetype='image/svg+xml')
 
     # --- 5. Crear y devolver la respuesta SVG ---
     resp = Response(svg_content, mimetype='image/svg+xml')
